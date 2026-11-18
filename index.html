@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сөз табын тап - Интерактивті ойын</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap');
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+        }
+        .pop-in {
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Басты контейнер -->
+    <div id="app" class="w-full max-w-xl bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-6 sm:p-8 text-slate-800 pop-in">
+        
+        <!-- Басты бет (Бастау) -->
+        <div id="welcome-screen" class="text-center py-6">
+            <div class="inline-block p-4 bg-indigo-100 text-indigo-600 rounded-2xl mb-4 text-4xl shadow-inner">
+                📚
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-indigo-900 mb-2">Сөз табын тап!</h1>
+            <p class="text-slate-600 text-sm sm:text-base mb-8 max-w-md mx-auto">
+                12 жастағы оқушыларға арналған қызықты білім беру ойыны. Берілген сөздің қай сөз табына жататынын анықта! Барлығы 15 сөз бар.
+            </p>
+            <button onclick="startGame()" class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white font-bold text-lg rounded-2xl shadow-lg transform active:scale-95 transition-all duration-200">
+                Ойынды бастау 🚀
+            </button>
+        </div>
+
+        <!-- Ойын экраны -->
+        <div id="game-screen" class="hidden">
+            <!-- Жоғарғы панель: Сөз санағы және ұпай -->
+            <div class="flex justify-between items-center mb-4 bg-slate-100 p-3 sm:p-4 rounded-2xl">
+                <div class="text-sm sm:text-base font-semibold text-slate-700">
+                    Сөз: <span id="current-index" class="text-indigo-600 font-bold">1</span> / <span id="total-words">15</span>
+                </div>
+                <!-- 10 секундтық таймер -->
+                <div class="flex items-center gap-1.5 bg-amber-100 border border-amber-300 text-amber-800 font-bold px-3 py-1 rounded-xl text-sm sm:text-base">
+                    <span>⏱️</span>
+                    <span id="timer-display">10</span> с
+                </div>
+                <div class="text-sm sm:text-base font-semibold text-slate-700">
+                    Ұпай: <span id="score" class="text-emerald-600 font-bold text-lg">0</span>
+                </div>
+            </div>
+
+            <!-- Прогресс жолағы -->
+            <div class="w-full bg-slate-200 h-2.5 rounded-full mb-6 overflow-hidden">
+                <div id="progress-bar" class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300" style="width: 6.66%"></div>
+            </div>
+
+            <!-- Шығатын сөз карточкасы -->
+            <div class="bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-100 rounded-3xl p-6 sm:p-8 text-center mb-6 shadow-sm relative">
+                <p class="text-xs sm:text-sm font-semibold uppercase tracking-wider text-indigo-400 mb-2">Берілген сөз:</p>
+                <h2 id="word-display" class="text-3xl sm:text-4xl font-extrabold text-indigo-950 tracking-wide">Кітап</h2>
+            </div>
+
+            <!-- Жауап батырмалары (Төрт батырма) -->
+            <div id="options-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6">
+                <!-- Javascript арқылы толтырылады -->
+            </div>
+
+            <!-- Қысқа түсіндірме блок (Жауаптан кейін шығады) -->
+            <div id="explanation-box" class="hidden p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-sm sm:text-base text-center mb-6 font-medium">
+                <!-- Түсіндірме осында жазылады -->
+            </div>
+
+            <!-- Келесі сөзге өту батырмасы -->
+            <button id="next-btn" onclick="nextWord()" class="hidden w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg rounded-2xl shadow-md transform active:scale-95 transition-all duration-200">
+                Келесі сөз ➡️
+            </button>
+        </div>
+
+        <!-- Нәтиже экраны (Аяқталу) -->
+        <div id="result-screen" class="hidden py-4">
+            <div class="text-center mb-6">
+                <div class="inline-block p-4 bg-emerald-100 text-emerald-600 rounded-2xl mb-3 text-4xl shadow-inner">
+                    🏆
+                </div>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Ойын аяқталды!</h2>
+                <p id="result-message" class="text-slate-600 text-base mb-4">
+                    Сіз 15 сөздің 15-іне дұрыс жауап бердіңіз!
+                </p>
+                <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100 max-w-xs mx-auto">
+                    <p class="text-slate-500 text-sm mb-1">Жинаған ұпайыңыз:</p>
+                    <p id="final-score" class="text-3xl font-extrabold text-indigo-600">15 / 15</p>
+                </div>
+            </div>
+
+            <!-- Қатемен жұмыс блогы -->
+            <div id="mistakes-container" class="mb-6 hidden">
+                <h3 class="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+                    <span>❌</span> Қате жіберген сөздеріңіз:
+                </h3>
+                <div id="mistakes-list" class="space-y-3 max-h-60 overflow-y-auto pr-1">
+                    <!-- Қателер тізімі осында динамикалы түрде қосылады -->
+                </div>
+            </div>
+
+            <button onclick="restartGame()" class="w-full py-4 bg-gradient-to-r from-indigo-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white font-bold text-lg rounded-2xl shadow-lg transform active:scale-95 transition-all duration-200">
+                Қайта ойнау 🔄
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // 15 сөзден тұратын деректер базасы
+        const wordsData = [
+            { word: "Мектеп", answer: "Зат есім", explanation: "«Мектеп» — заттың атын білдіреді, Кім? Не? сұрақтарына жауап береді." },
+            { word: "Әдемі", answer: "Сын есім", explanation: "«Әдемі» — заттың сын-сипатын, түрін білдіреді, Қандай? сұрағына жауап береді." },
+            { word: "Жүгірді", answer: "Етістік", explanation: "«Жүгірді» — заттың қимылын, іс-әрекетін білдіреді, Не істеді? сұрағына жауап береді." },
+            { word: "Бес", answer: "Сан есім", explanation: "«Бес» — заттың санын, мөлшерін білдіреді, Неше? Қанша? сұрақтарына жауап береді." },
+            { word: "Аспан", answer: "Зат есім", explanation: "«Аспан» — заттың атын білдіреді, Не? сұрағына жауап беретін зат есім." },
+            { word: "Қызыл", answer: "Сын есім", explanation: "«Қызыл» — заттың түсін білдіретін сын есім, Қандай? сұрағына жауап береді." },
+            { word: "Оқыды", answer: "Етістік", explanation: "«Оқыды» — қимыл мен іс-әрекетті білдіретін етістік." },
+            { word: "Отыз", answer: "Сан есім", explanation: "«Отыз» — заттың нақты санын білдіретін сан есім." },
+            { word: "Доп", answer: "Зат есім", explanation: "«Доп» — зат есім, заттың атын білдіреді." },
+            { word: "Жылдам", answer: "Сын есім", explanation: "«Жылдам» — сын есім, заттың сапалық белгісін не сынын білдіреді." },
+            { word: "Күлді", answer: "Етістік", explanation: "«Күлді» — іс-әрекет пен қимылды білдіретін етістік." },
+            { word: "Жетінші", answer: "Сан есім", explanation: "«Жетінші» — реттік сан есім, Нешинші? сұрағына жауап береді." },
+            { word: "Мұғалім", answer: "Зат есім", explanation: "«Мұғалім» — мамандық иесін, кім екенін білдіретін зат есім." },
+            { word: "Үлкен", answer: "Сын есім", explanation: "«Үлкен» — көлемді, сыпатты білдіретін сын есім." },
+            { word: "Жазды", answer: "Етістік", explanation: "«Жазды» — іс-әрекетті білдіретін етістік (Не істеді?)." }
+        ];
+
+        const wordTypes = ["Зат есім", "Сын есім", "Етістік", "Сан есім"];
+
+        let currentIndex = 0;
+        let score = 0;
+        let answered = false;
+        let timerInterval = null;
+        let timeLeft = 10;
+        let mistakes = []; // Қателескен сөздер тізімі
+
+        // Элементтерді алу
+        const welcomeScreen = document.getElementById("welcome-screen");
+        const gameScreen = document.getElementById("game-screen");
+        const resultScreen = document.getElementById("result-screen");
+        const wordDisplay = document.getElementById("word-display");
+        const optionsContainer = document.getElementById("options-container");
+        const currentIndexSpan = document.getElementById("current-index");
+        const totalWordsSpan = document.getElementById("total-words");
+        const scoreSpan = document.getElementById("score");
+        const progressBar = document.getElementById("progress-bar");
+        const explanationBox = document.getElementById("explanation-box");
+        const nextBtn = document.getElementById("next-btn");
+        const finalScore = document.getElementById("final-score");
+        const resultMessage = document.getElementById("result-message");
+        const timerDisplay = document.getElementById("timer-display");
+        const mistakesContainer = document.getElementById("mistakes-container");
+        const mistakesList = document.getElementById("mistakes-list");
+
+        totalWordsSpan.textContent = wordsData.length;
+
+        // Ойынды бастау функциясы
+        function startGame() {
+            welcomeScreen.classList.add("hidden");
+            gameScreen.classList.remove("hidden");
+            currentIndex = 0;
+            score = 0;
+            mistakes = [];
+            scoreSpan.textContent = score;
+            loadWord();
+        }
+
+        // Таймерді іске қосу
+        function startTimer() {
+            clearInterval(timerInterval);
+            timeLeft = 10;
+            timerDisplay.textContent = timeLeft;
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    handleTimeOut();
+                }
+            }, 1000);
+        }
+
+        // Уақыт таусылғанда орындалатын функция
+        function handleTimeOut() {
+            if (answered) return;
+            answered = true;
+
+            const currentObj = wordsData[currentIndex];
+
+            // Қателер тізіміне қосу (уақыт таусылды деп)
+            mistakes.push({
+                word: currentObj.word,
+                userAnswer: "Уақыт таусылды ⏱️",
+                correctAnswer: currentObj.answer,
+                explanation: currentObj.explanation
+            });
+
+            // Дұрыс жауапты жасылмен белгілеу
+            const buttons = optionsContainer.getElementsByTagName("button");
+            for (let btn of buttons) {
+                btn.disabled = true;
+                if (btn.textContent === currentObj.answer) {
+                    btn.classList.remove("bg-slate-100", "border-slate-200", "text-slate-800");
+                    btn.classList.add("bg-emerald-500", "text-white", "border-emerald-600", "shadow-md");
+                }
+            }
+
+            // Түсіндірме көрсету
+            explanationBox.textContent = `⏱️ Уақыт таусылды! ${currentObj.explanation}`;
+            explanationBox.classList.remove("hidden");
+
+            nextBtn.classList.remove("hidden");
+        }
+
+        // Сөзді жүктеу функциясы
+        function loadWord() {
+            answered = false;
+            explanationBox.classList.add("hidden");
+            nextBtn.classList.add("hidden");
+
+            // Прогресс пен санауышты жаңарту
+            currentIndexSpan.textContent = currentIndex + 1;
+            let progressPercent = ((currentIndex + 1) / wordsData.length) * 100;
+            progressBar.style.width = progressPercent + "%";
+
+            // Сөзді шығару
+            wordDisplay.textContent = wordsData[currentIndex].word;
+
+            // Батырмаларды жасау
+            optionsContainer.innerHTML = "";
+            wordTypes.forEach(type => {
+                const button = document.createElement("button");
+                button.textContent = type;
+                button.className = "w-full py-4 px-6 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-base sm:text-lg rounded-2xl border-2 border-slate-200 transition-all duration-150 transform active:scale-95 shadow-sm";
+                button.onclick = () => checkAnswer(type, button);
+                optionsContainer.appendChild(button);
+            });
+
+            // Таймерді бастау
+            startTimer();
+        }
+
+        // Жауапты тексеру функциясы
+        function checkAnswer(selectedType, selectedButton) {
+            if (answered) return;
+            answered = true;
+
+            clearInterval(timerInterval); // Жауап берген соң таймерді тоқтату
+
+            const currentObj = wordsData[currentIndex];
+            const buttons = optionsContainer.getElementsByTagName("button");
+
+            for (let btn of buttons) {
+                btn.disabled = true;
+                if (btn.textContent === currentObj.answer) {
+                    btn.classList.remove("bg-slate-100", "border-slate-200", "text-slate-800", "hover:bg-slate-200");
+                    btn.classList.add("bg-emerald-500", "text-white", "border-emerald-600", "shadow-md");
+                }
+            }
+
+            if (selectedType === currentObj.answer) {
+                score++;
+                scoreSpan.textContent = score;
+            } else {
+                selectedButton.classList.remove("bg-slate-100", "border-slate-200", "text-slate-800", "hover:bg-slate-200");
+                selectedButton.classList.add("bg-rose-500", "text-white", "border-rose-600", "shadow-md");
+
+                // Қателескен сөзді сақтау
+                mistakes.push({
+                    word: currentObj.word,
+                    userAnswer: selectedType,
+                    correctAnswer: currentObj.answer,
+                    explanation: currentObj.explanation
+                });
+            }
+
+            // Түсіндірмені көрсету
+            explanationBox.textContent = currentObj.explanation;
+            explanationBox.classList.remove("hidden");
+
+            // Келесі батырмасын шығару
+            nextBtn.classList.remove("hidden");
+        }
+
+        // Келесі сөзге өту
+        function nextWord() {
+            currentIndex++;
+            if (currentIndex < wordsData.length) {
+                loadWord();
+            } else {
+                showResults();
+            }
+        }
+
+        // Нәтижені көрсету функциясы
+        function showResults() {
+            clearInterval(timerInterval);
+            gameScreen.classList.add("hidden");
+            resultScreen.classList.remove("hidden");
+            finalScore.textContent = `${score} / ${wordsData.length}`;
+
+            if (score === wordsData.length) {
+                resultMessage.textContent = "Керемет! Барлық сұраққа мүлтіксіз дұрыс жауап бердіңіз! 🌟";
+            } else if (score >= 10) {
+                resultMessage.textContent = "Өте жақсы нәтиже! Біліміңіз жақсы қалыптасқан. 👍";
+            } else {
+                resultMessage.textContent = "Жаман емес, бірақ сөз таптарын қайталап шықсаңыз тамаша болады! 💪";
+            }
+
+            // Қателерді шығару
+            if (mistakes.length > 0) {
+                mistakesContainer.classList.remove("hidden");
+                mistakesList.innerHTML = "";
+                mistakes.forEach(item => {
+                    const card = document.createElement("div");
+                    card.className = "bg-rose-50 border border-rose-200 rounded-2xl p-3 text-left text-xs sm:text-sm";
+                    card.innerHTML = `
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-extrabold text-slate-800 text-base">«${item.word}»</span>
+                            <span class="text-rose-600 font-bold bg-rose-100 px-2 py-0.5 rounded-md">Дұрысы: ${item.correctAnswer}</span>
+                        </div>
+                        <p class="text-slate-600 mb-1">Сіздің жауабыңыз: <span class="line-through text-rose-500 font-semibold">${item.userAnswer}</span></p>
+                        <p class="text-slate-500 text-xs italic">💡 ${item.explanation}</p>
+                    `;
+                    mistakesList.appendChild(card);
+                });
+            } else {
+                mistakesContainer.classList.add("hidden");
+            }
+        }
+
+        // Қайта ойнау
+        function restartGame() {
+            resultScreen.classList.add("hidden");
+            startGame();
+        }
+    </script>
+</body>
+</html>
